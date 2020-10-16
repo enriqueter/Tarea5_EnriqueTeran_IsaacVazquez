@@ -38,13 +38,11 @@
 #define Gz_L 0x10
 #define Gz_H 0x11
 
-/* Address for BMI */
-/*BMI I2C address*/
+/* Config Defines for BMI */
 #define BMI160_ADDR 0x68 // Default I2C 7-bit address of device
 #define BMI160_SUBADDR (2U)	// Size of registers
 #define BMI160_DATA_SIZE (2U)
-#define BMI160_BAUDRATE(100000U)
-
+#define BMI160_BAUDRATE (100000U)
 #define BMI160_CONFIG 0x7E	// Register for configuration
 #define BMI160_ID 0x00
 #define BMI160_CHIP_ID 0xD1
@@ -71,8 +69,6 @@ void BMI160_Initalization(void *args);
 Accel_data_t BMI160_ACCEL_Read(void);
 /*Gyroscope read function*/
 Gyro_data_t BMI160_GRYO_Read(void);
-
-
 
 
 #endif /* BMI160_H_ */
