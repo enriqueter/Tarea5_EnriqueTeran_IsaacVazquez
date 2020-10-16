@@ -12,7 +12,7 @@
 #include <stdint.h>
 /*RTOS Includes*/
 #include "rtos_i2c.h"
-#include "FREErtos.h"
+#include "FreeRTOS.h"
 #include "event_groups.h"
 #include "semphr.h"
 #include "task.h"
@@ -46,7 +46,12 @@
 #define BMI160_CONFIG 0x7E	// Register for configuration
 #define BMI160_ID 0x00
 #define BMI160_CHIP_ID 0xD1
+#define EMPTY 1u
+#define SHIFT 8
 
+/*Pins */
+#define PTC10 (10U)
+#define PTC11 (11U)
 
 /*Accelerometer structure data*/
 typedef struct {

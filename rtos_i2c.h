@@ -21,7 +21,7 @@ typedef struct
 	rtos_i2c_port_t i2c_port;		/**i2c k66 port*/
 	uint8_t muxpin;					/**Mux_Config*/
 	uint8_t Data_pin;				/**Serial Data pin*/
-	uint8_t CLk_pin;				/**Serial Clock pin*/
+	uint8_t CLK_pin;				/**Serial Clock pin*/
 
 }rtos_i2c_config_t;
 

@@ -22,12 +22,12 @@ void BMI160_Initalization(void *args) {
 	/*Define i2c config variable for initialization*/
 	rtos_i2c_config_t i2c_config;
 	/* i2c config values for BMI160 */
-    i2c_config.baudrate = BMI160_BAUDRATE;/*I2C Baud rate*/
+    i2c_config.i2c_baudrate = BMI160_BAUDRATE;/*I2C Baud rate*/
     i2c_config.i2c_number = rtos_i2c_1;	/*I2C to use*/
-    i2c_config.port = rtos_i2c_portC;	/*Port*/
-	i2c_config.SCL_pin = PTC10;	/*Pin SCL*/
-	i2c_config.SDA_pin = PTC11;	/*Pin SDA*/
-	i2c_config.pin_mux = kPORT_MuxAlt2;	/*Pin Configuration*/
+    i2c_config.i2c_port = rtos_i2c_portC;	/*Port*/
+	i2c_config.CLK_pin = PTC10;	/*Pin SCL*/
+	i2c_config.Data_pin = PTC11;	/*Pin SDA*/
+	i2c_config.muxpin = kPORT_MuxAlt2;	/*Pin Configuration*/
 	rtos_i2c_init(i2c_config);
 	dRead = NULL;
 	/**/
@@ -37,8 +37,8 @@ void BMI160_Initalization(void *args) {
 	dWrite = BMI160_GYRO;
 	rtos_i2c_transfer(rtos_i2c_1, &dWrite, EMPTY, BMI160_SUBADDR, BMI160_CONFIG, EMPTY);
 
-	if (dataRead == BMI160_CHIP_ID) {
-		PRINTF("ID = 0x%x \n", dataRead);
+	if (dRead == BMI160_CHIP_ID) {
+		PRINTF("ID = 0x%x \n", dRead);
 	}
 	vTaskDelay(portMAX_DELAY);
 }
@@ -61,7 +61,7 @@ Accel_data_t BMI160_ACCEL_Read(void) {
 	Accel_data.y = (Y_H << SHIFT) + Y_L;
 	Accel_data.z = (Z_H << SHIFT) + Z_L;
 	/*Read data return*/
-	return A_data;
+	return Accel_data;
 }
 
 
@@ -82,5 +82,5 @@ Gyro_data_t BMI160_GRYO_Read(void) {
 	Gyro_data.y = (Y_H << SHIFT) + Y_L;
 	Gyro_data.z = (Z_H << SHIFT) + Z_L;
 	/*Read data return*/
-	return G_data;
+	return Gyro_data;
 }

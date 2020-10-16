@@ -108,11 +108,11 @@ rtos_i2c_flag_t rtos_i2c_init(rtos_i2c_config_t config)
 			i2c_handles[config.i2c_number].tx_rx_sem = xSemaphoreCreateBinary();
 
 			/*Enables I2C port*/
-			enable_port_clock(config.port);
+			enable_port_clock(config.i2c_port);
 			enable_i2c_clock(config.i2c_number);
 
-			PORT_SetPinConfig(get_port_base(config.port), config.SCL_pin, &config_i2c);
-			PORT_SetPinConfig(get_port_base(config.port), config.SDA_pin, &config_i2c);
+			PORT_SetPinConfig(get_port_base(config.i2c_port), config.CLK_pin, &config_i2c);
+			PORT_SetPinConfig(get_port_base(config.i2c_port), config.Data_pin, &config_i2c);
 
 			/*Sets SCL pin*/
 			//PORT_SetPinMux(get_port_base(config.port), config.SCL_pin, config.pin_mux);
@@ -120,7 +120,7 @@ rtos_i2c_flag_t rtos_i2c_init(rtos_i2c_config_t config)
 			//PORT_SetPinMux(get_port_base(config.port), config.SDA_pin, config.pin_mux);
 
 			I2C_MasterGetDefaultConfig(&fsl_config);
-			fsl_config.baudRate_Bps = config.baudrate;
+			fsl_config.baudRate_Bps = config.i2c_baudrate;
 			I2C_MasterInit(get_i2c_base(config.i2c_number), &fsl_config, CLOCK_GetFreq(kCLOCK_BusClk));
 
 /*Creates I2C Handle*/
