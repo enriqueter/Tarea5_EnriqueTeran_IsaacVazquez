@@ -42,6 +42,7 @@
 #include "FreeRTOS.h"
 #include "BMI160.h"
 #include "rtos_i2c.h"
+#include "fsl_uart.h"
 /* TODO: insert other include files here. */
 
 /* TODO: insert other definitions and declarations here. */
@@ -56,15 +57,18 @@ int main(void) {
     BOARD_InitBootPins();
     BOARD_InitBootClocks();
     BOARD_InitBootPeripherals();
-#ifndef BOARD_INIT_DEBUG_CONSOLE_PERIPHERAL
+
     /* Init FSL debug console. */
     BOARD_InitDebugConsole();
-#endif
+
 
     PRINTF("Hello World\n");
 
+
+
     xTaskCreate(i2c_init_task, "i2c_init_task", 110, NULL, 1, NULL);
     xTaskCreate(IMU_dataget_task, "IMU_dataget_task", 110, NULL, 1, NULL);
+    BMI160_Initalization();
     vTaskStartScheduler();
     /* Force the counter to be placed into memory. */
 
@@ -74,23 +78,27 @@ int main(void) {
     }
     return 0 ;
 }
-void i2c_init_task(void * args){​​
-    rtos_i2c_config_t config;
-    config.i2c_baudrate = 100000;
-    config.i2c_number = rtos_i2c_1;
-    config.i2c_port = rtos_i2c_portC;
-    rtos_i2c_init(config);
-    vTaskSuspend(NULL);
+
+void i2c_init_task(void * args){
+
+	rtos_i2c_config_t config;
+	config.baudrate = 100000;
+	config.i2c_number = rtos_i2c_1;
+	config.port = rtos_i2c_portC;
+	rtos_i2c_init(config);
+	BMI160_Initalization();
+	vTaskSuspend(100000000000000000000);
 }
-void IMU_dataget_task(void * args){​​
-    Accel_data_t accel_data_out;
-    Gyro_data_t  gryo_data_out;
-    BMI160_Initalization(args);
-    gryo_data_out=BMI160_GRYO_Read();
-    accel_data_out=BMI160_ACCEL_Read();
 
-    //PRINTF("Accelerometer VALUES  X:%d Y:%d Z:%d \n",accel_data_out.x ,accel_data_out.y,accel_data_out.z);
-   // PRINTF("Gryoscope   VALUES  X:%d Y:%d Z:%d \n",gryo_data_out.x ,gryo_data_out.y,gryo_data_out.z);
+void IMU_dataget_task(void *args){
+	Accel_data_t accel_data_out;
+	Gyro_data_t gryo_data_out;
 
-    vTaskSuspend(1000);
-​​​​}
+
+	gryo_data_out = BMI160_GRYO_Read();
+	accel_data_out = BMI160_ACCEL_Read();
+
+	PRINTF("Accelerometer values x:%d y:%d z:%d \n", accel_data_out.x, accel_data_out.y, accel_data_out.z);
+	PRINTF("Accelerometer values x:%d y:%d z:%d \n", gryo_data_out.x, gryo_data_out.y, gryo_data_out.z);
+
+}
