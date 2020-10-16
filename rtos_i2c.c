@@ -28,12 +28,12 @@ typedef struct
 {
 	uint8_t is_init;								/**Flag to detect I2C initialization*/
 	i2c_master_handle_t fsl_i2c_master_handle;		/**I2C callback handle*/
-	SemaphoreHandle_t mutex_tx_rx;					/**Mutex to protect access through I2C*/
-	SemaphoreHandle_t tx_rx_sem;					/**Binary to signal status of actions through I2C*/
+	SemaphoreHandle_t mutexTxRx;					/**Mutex to protect access through I2C*/
+	SemaphoreHandle_t semaphoreTxRx;					/**Binary to signal status of actions through I2C*/
 }rtos_i2c_hanlde_t;
 
 /**Array of handles to control I2C's*/
-static rtos_i2c_hanlde_t i2c_handles[NUMBER_OF_SERIAL_PORTS] = {0};
+static rtos_i2c_hanlde_t i2c_handle[NUMBER_OF_SERIAL_PORTS] = {0};
 
 /**Callback function when I2C is finished*/
 static void fsl_i2c_callback(I2C_Type *base, i2c_master_handle_t *handle, status_t status, void *userData)
@@ -48,21 +48,21 @@ static void fsl_i2c_callback(I2C_Type *base, i2c_master_handle_t *handle, status
 		if(I2C0 == base)
 		{
 			/**Gives binary semaphore of IC2 0*/
-			xSemaphoreGiveFromISR(i2c_handles[rtos_i2c_0].tx_rx_sem, &xHigherPriorityTaskWoken);
+			xSemaphoreGiveFromISR(i2c_handle[rtos_i2c_0].semaphoreTxRx, &xHigherPriorityTaskWoken);
 		}
 
 		/**Return with I2C 1*/
 		else if(I2C1 == base)
 		{
 			/**Gives binary semaphore of IC2 1*/
-			xSemaphoreGiveFromISR(i2c_handles[rtos_i2c_1].tx_rx_sem, &xHigherPriorityTaskWoken);
+			xSemaphoreGiveFromISR(i2c_handle[rtos_i2c_1].semaphoreTxRx, &xHigherPriorityTaskWoken);
 		}
 
 		/**Return with I2C 2*/
 		else if(I2C2 == base)
 		{
 			/**Gives binary semaphore of IC2 2*/
-			xSemaphoreGiveFromISR(i2c_handles[rtos_i2c_2].tx_rx_sem, &xHigherPriorityTaskWoken);
+			xSemaphoreGiveFromISR(i2c_handle[rtos_i2c_2].semaphoreTxRx, &xHigherPriorityTaskWoken);
 		}
 	}
 	/**Ends callback*/
@@ -91,15 +91,15 @@ rtos_i2c_flag_t rtos_i2c_init(rtos_i2c_config_t config)
 	if(config.i2c_number < NUMBER_OF_SERIAL_PORTS)
 	{
 		/**Checks if its first time on initialize I2C*/
-		if(!i2c_handles[config.i2c_number].is_init)
+		if(!i2c_handle[config.i2c_number].is_init)
 		{
 
 			NVIC_SetPriority(I2C0_IRQn,5);
 			NVIC_SetPriority(I2C1_IRQn,5);
 			/**Creates mutex to protect access through I2C*/
-			i2c_handles[config.i2c_number].mutex_tx_rx = xSemaphoreCreateMutex();
+			i2c_handle[config.i2c_number].mutexTxRx = xSemaphoreCreateMutex();
 			/**Creates binary to check status of I2C operation*/
-			i2c_handles[config.i2c_number].tx_rx_sem = xSemaphoreCreateBinary();
+			i2c_handle[config.i2c_number].semaphoreTxRx = xSemaphoreCreateBinary();
 
 			/**Enables I2C port*/
 			enable_port_clock(config.port);
@@ -119,10 +119,10 @@ rtos_i2c_flag_t rtos_i2c_init(rtos_i2c_config_t config)
 
 /**Creates I2C Handle*/
 			I2C_MasterTransferCreateHandle(get_i2c_base(config.i2c_number),
-					&i2c_handles[config.i2c_number].fsl_i2c_master_handle, fsl_i2c_callback, NULL);
+					&i2c_handle[config.i2c_number].fsl_i2c_master_handle, fsl_i2c_callback, NULL);
 
 			/**Sets handles as initialized*/
-			i2c_handles[config.i2c_number].is_init = 1;
+			i2c_handle[config.i2c_number].is_init = 1;
 			/**Returns successful initialization*/
 			retval = rtos_i2c_sucess;
 		}
@@ -144,7 +144,7 @@ rtos_i2c_flag_t rtos_i2c_transfer(rtos_i2c_number_t i2c_number, uint8_t * buffer
 	rtos_i2c_flag_t flag = rtos_i2c_fail;
 
 	/**Check if I2C was initialized first*/
-	if(i2c_handles[i2c_number].is_init)
+	if(i2c_handle[i2c_number].is_init)
 	{
 		xfer.data = buffer;						/**Data to transfer*/
 		xfer.dataSize = length;					/**Length of data*/
@@ -155,17 +155,17 @@ rtos_i2c_flag_t rtos_i2c_transfer(rtos_i2c_number_t i2c_number, uint8_t * buffer
 		xfer.flags = kI2C_TransferDefaultFlag;	/**Transfer flag*/
 
 		/**Mutex to protect transfer (start)*/
-		xSemaphoreTake(i2c_handles[i2c_number].mutex_tx_rx, portMAX_DELAY);
+		xSemaphoreTake(i2c_handle[i2c_number].mutexTxRx, portMAX_DELAY);
 
 		/**Transfer data through I2C*/
-		I2C_MasterTransferNonBlocking(get_i2c_base(i2c_number), &i2c_handles[i2c_number].fsl_i2c_master_handle, &xfer);
+		I2C_MasterTransferNonBlocking(get_i2c_base(i2c_number), &i2c_handle[i2c_number].fsl_i2c_master_handle, &xfer);
 		/**Semaphore to wait successful transfer*/
 		//while(!g_flag);
 		//g_flag = 0;
-		xSemaphoreTake(i2c_handles[i2c_number].tx_rx_sem, portMAX_DELAY);
+		xSemaphoreTake(i2c_handle[i2c_number].semaphoreTxRx, portMAX_DELAY);
 
 		/**Mutex to protect transfer (end)*/
-		xSemaphoreGive(i2c_handles[i2c_number].mutex_tx_rx);
+		xSemaphoreGive(i2c_handle[i2c_number].mutexTxRx);
 
 		/**Successful transfer*/
 		flag = rtos_i2c_sucess;
@@ -185,7 +185,7 @@ rtos_i2c_flag_t rtos_i2c_receive(rtos_i2c_number_t i2c_number, uint8_t * buffer,
 	rtos_i2c_flag_t flag = rtos_i2c_fail;
 
 	/**Check if I2C was initialized first*/
-	if(i2c_handles[i2c_number].is_init)
+	if(i2c_handle[i2c_number].is_init)
 	{
 		xfer.data = buffer;						/**Data to transfer*/
 		xfer.dataSize = length;					/**Length of data*/
@@ -196,15 +196,15 @@ rtos_i2c_flag_t rtos_i2c_receive(rtos_i2c_number_t i2c_number, uint8_t * buffer,
 		xfer.flags = kI2C_TransferDefaultFlag;	/**Transfer flag*/
 
 		/**Mutex to protect transfer (start)*/
-		xSemaphoreTake(i2c_handles[i2c_number].mutex_tx_rx, portMAX_DELAY);
+		xSemaphoreTake(i2c_handle[i2c_number].mutexTxRx, portMAX_DELAY);
 
 		/**Transfer data through I2C*/
-		I2C_MasterTransferNonBlocking(get_i2c_base(i2c_number), &i2c_handles[i2c_number].fsl_i2c_master_handle, &xfer);
+		I2C_MasterTransferNonBlocking(get_i2c_base(i2c_number), &i2c_handle[i2c_number].fsl_i2c_master_handle, &xfer);
 		/**Semaphore to wait successful transfer*/
-		xSemaphoreTake(i2c_handles[i2c_number].tx_rx_sem, portMAX_DELAY);
+		xSemaphoreTake(i2c_handle[i2c_number].semaphoreTxRx, portMAX_DELAY);
 
 		/**Mutex to protect transfer (end)*/
-		xSemaphoreGive(i2c_handles[i2c_number].mutex_tx_rx);
+		xSemaphoreGive(i2c_handle[i2c_number].mutexTxRx);
 
 		/**Successful transfer*/
 		flag = rtos_i2c_sucess;
